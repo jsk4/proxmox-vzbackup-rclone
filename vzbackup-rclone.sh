@@ -2,20 +2,20 @@
 # ./vzbackup-rclone.sh rehydrate YYYY/MM/DD file_name_encrypted.bin
 
 ############ /START CONFIG
-dumpdir="/mnt/pve/pvebackups01/dump" # Set this to where your vzdump files are stored
-MAX_AGE=3 # This is the age in days to keep local backup copies. Local backups older than this are deleted.
+dumpdir="/var/lib/vz/dump" # Set this to where your vzdump files are stored
+MAX_AGE=2 # This is the age in days to keep local backup copies. Local backups older than this are deleted.
 ############ /END CONFIG
 
 _bdir="$dumpdir"
 rcloneroot="$dumpdir/rclone"
-timepath="$(date +%Y)/$(date +%m)/$(date +%d)"
+timepath="Proxmox-backups/$(date +%Y)/$(date +%m)/$(date +%d)"
 rclonedir="$rcloneroot/$timepath"
 COMMAND=${1}
 rehydrate=${2} #enter the date you want to rehydrate in the following format: YYYY/MM/DD
 if [ ! -z "${3}" ];then
         CMDARCHIVE=$(echo "/${3}" | sed -e 's/\(.bin\)*$//g')
 fi
-tarfile=${TARFILE}
+tarfile=${TARGET}
 exten=${tarfile#*.}
 filename=${tarfile%.*.*}
 
@@ -24,7 +24,7 @@ if [[ ${COMMAND} == 'rehydrate' ]]; then
     #echo "For example, today would be: $timepath"
     #read -p 'Rehydrate Date => ' rehydrate
     rclone --config /root/.config/rclone/rclone.conf \
-    --drive-chunk-size=32M copy gd-backup_crypt:/$rehydrate$CMDARCHIVE $dumpdir \
+    --drive-chunk-size=32M copy drive:/$rehydrate$CMDARCHIVE $dumpdir \
     -v --stats=60s --transfers=16 --checkers=16
 fi
 
@@ -40,7 +40,7 @@ if [[ ${COMMAND} == 'backup-end' ]]; then
     echo "rcloning $rclonedir"
     #ls $rclonedir
     rclone --config /root/.config/rclone/rclone.conf \
-    --drive-chunk-size=32M copy $tarfile gd-backup_crypt:/$timepath \
+    --drive-chunk-size=32M copy $tarfile drive:/$timepath \
     -v --stats=60s --transfers=16 --checkers=16
 fi
 
@@ -50,7 +50,7 @@ if [[ ${COMMAND} == 'job-end' ||  ${COMMAND} == 'job-abort' ]]; then
     _tdir=$(mktemp -d $_tdir/proxmox-XXXXXXXX)
     function clean_up {
         echo "Cleaning up"
-        rm -rf $_tdir
+		        rm -rf $_tdir
     }
     trap clean_up EXIT
     _now=$(date +%Y-%m-%d.%H.%M.%S)
@@ -77,7 +77,7 @@ if [[ ${COMMAND} == 'job-end' ||  ${COMMAND} == 'job-abort' ]]; then
     echo "rcloning $_filename4"
     #ls $rclonedir
     rclone --config /root/.config/rclone/rclone.conf \
-    --drive-chunk-size=32M move $_filename4 gd-backup_crypt:/$timepath \
+    --drive-chunk-size=32M move $_filename4 drive:/$timepath \
     -v --stats=60s --transfers=16 --checkers=16
 
     #rm -rfv $rcloneroot
