@@ -31,6 +31,8 @@ fi
 if [[ ${COMMAND} == 'job-start' ]]; then
     echo "Deleting backups older than $MAX_AGE days."
     find $dumpdir -type f -mtime +$MAX_AGE -exec /bin/rm -f {} \;
+    rclone --config /root/.config/rclone/rclone.conf delete --min-age 2d drive:Proxmox-backups
+    rclone --config /root/.config/rclone/rclone.conf rmdirs --min-age 2d drive:Proxmox-backups
 fi
 
 if [[ ${COMMAND} == 'backup-end' ]]; then
